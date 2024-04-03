@@ -1,0 +1,207 @@
+Configuração do servidor NFS :
+Instalação do servidor NFS : sudo su install nfs-utils
+Instalação do pacote nfs-kernel-server : sudo su apt install nfs-kernel-server
+Apos se realiza um update e um upgrade da maquina servidor root@192.168.0.103 wanderson-server: apt upgrade && apt update
+Verifica se o servidor está funcionando normalmente : systemctl status nfs-kernel-server
+Criação de novos diretorios : sudo mkdir /etc/exports
+Dentro do diretorio exports é criado uma pasta que servira de compartilhamento de arquivos entre o servidor e o client : mkdir /etc/exports/backup  
+
+É criado dentro da pasta backup um arquivo que servira se o servidor está funcionando nano /backup/test1.txt
+Dentro do arquivo de texto test1.txt é colocado 'Hello World'.
+Apos isso na maquina cliente é instalado o pacote para iniciar o compartilhamento de arquivos : sudo su apt install nfs-common
+É verificado se o compartilhamento está em vigor na maquina cliente : showmount --exports 192.168.0.103 export list for 192.168.0.103
+/exports/backup (everyone)
+É criado diretorios na maquina servidor para que possa receber os arquivos da pasta backup do servidor root : mkdir /mnt/nfs/backup
+EFS Configuração realizada pelo linux via ssh root@192.168.0.103 para o servidor-client 10.0.2.15/24 :sudo mount 192.168.0.103:/exports/backup /mnt/nfs/backup
+Apos é utilizado o comando df -h para visualizar se de fato a montagem foi realizada :
+
+root@wf: /home/wfo# df -h
+Filesystem      Size  Used Avail Use% Mounted on
+undev         783M  2,0M  781M   1% /run
+/dev/sdb2        53G   36G   15G  72% /
+tmpfs           3,9G     0  3,9G   0% /dev/shm
+tmpfs           5,0M  4,0K  5,0M   1% /run/lock
+/dev/sda1        96M   32M   65M  33% /boot/efi
+tmpfs           783M  1,7M  781M   1% /run/user/1000
+192.168.0.103    53G   36G   15G   72% /mnt/nfs/backup
+Apos é feito a leitura do arquivo contigo na pasta backup com o comando cat : cat /mnt/nfs/backup/test1.txt 
+Tendo o resultado : hello world
+
+Instalação do Apache e configuração do HTTPD :
+
+sudo su apt install apache2
+verifica-se o status do apache2 na maquina servidor : systemctl status apache2
+realiza-se um upgrade e update dos arquivos e diretorios da maquina servidor : sudo apt upgrade && update
+é realizado a troca do nome do servidor para melhor acesso : nano etc/hostname
+dentro do arquivo hostname é colocado : wanderson-server
+é colado o ip para o novo nome do servidor : nano/hosts 
+127.0.0.1       localhost
+127.0.1.1       wanderson-server
+é realizado a instalação do pacote para o funcionamento do apache : sudp apt install apache2-doc apache2-utils
+apos é realizado a conferencia se o apache está funcionando :
+root@wanderson-server:~# systemctl status apache2
+● apache2.service - The Apache HTTP Server
+     Loaded: loaded (/lib/systemd/system/apache2.service; enabled; vendor prese>
+     Active: active (running) since Tue 2024-04-02 16:24:16 -03; 8h ago
+       Docs: https://httpd.apache.org/docs/2.4/
+    Process: 1392 ExecStart=/usr/sbin/apachectl start (code=exited, status=0/SU>
+    Process: 37056 ExecReload=/usr/sbin/apachectl graceful (code=exited, status>
+   Main PID: 1432 (apache2)
+      Tasks: 55 (limit: 9305)
+     Memory: 10.7M
+        CPU: 1.417s
+     CGroup: /system.slice/apache2.service
+             ├─ 1432 /usr/sbin/apache2 -k start
+             ├─37134 /usr/sbin/apache2 -k start
+             └─37135 /usr/sbin/apache2 -k start
+
+abr 02 16:24:15 wanderson-server systemd[1]: Starting The Apache HTTP Server...
+abr 02 16:24:16 wanderson-server apachectl[1422]: AH00558: apache2: Could not r>
+abr 02 16:24:16 wanderson-server systemd[1]: Started The Apache HTTP Server.
+abr 03 00:00:02 wanderson-server systemd[1]: Reloading The Apache HTTP Server...
+abr 03 00:00:02 wanderson-server apachectl[37075]: AH00558: apache2: Could not >
+abr 03 00:00:02 wanderson-server systemd[1]: Reloaded The Apache HTTP Server.
+lines 1-21/21 (END)
+
+Criação do arquivo apache_status.sh, arquivo que irá funcionar de 5 em 5 minutos fazendo check in do status do apache :
+root@wanderson-server:/wanderson# ls
+apache_status.sh  online.txt
+dentro do arquivo apache_status.sh é realizado o script que ira rodar de 5 em 5 minutos pelo crontab  colocado como metodo de verificação de segurança o arquivo relatorio2.txt para verificar a auteticidade do funcionamento do arquivo
+
+root@wanderson-server:/wanderson# crontab -e
+*/5 * * * * root /wanderson/apache_status.sh>>relatorio2.txt
+
+Relatorio do script rodando de cinco em cinco minutos pelo crontab :
+
+
+
+root@wanderson-server:/wanderson# cat online.txt
+APACHE - 01/04/24 - 23:26:01 online
+APACHE - 01/04/24 - 23:27:01 online
+APACHE - 01/04/24 - 23:28:01 online
+APACHE - 01/04/24 - 23:29:01 online
+APACHE - 01/04/24 - 23:30:01 online
+APACHE - 01/04/24 - 23:31:01 online
+APACHE - 01/04/24 - 23:32:01 online
+APACHE - 01/04/24 - 23:33:01 online
+APACHE - 01/04/24 - 23:34:01 online
+APACHE - 01/04/24 - 23:35:01 online
+APACHE - 01/04/24 - 23:36:01 online
+APACHE - 01/04/24 - 23:37:01 online
+APACHE - 01/04/24 - 23:38:01 online
+APACHE - 01/04/24 - 23:40:01 online
+APACHE - 02/04/24 - 10:55:01 online
+APACHE - 02/04/24 - 11:00:01 online
+APACHE - 02/04/24 - 11:05:01 online
+APACHE - 02/04/24 - 11:10:01 online
+APACHE - 02/04/24 - 11:15:01 online
+APACHE - 02/04/24 - 11:20:01 online
+APACHE - 02/04/24 - 11:25:01 online
+APACHE - 02/04/24 - 11:30:01 online
+APACHE - 02/04/24 - 11:35:01 online
+APACHE - 02/04/24 - 16:20:01 online
+APACHE - 02/04/24 - 16:25:01 online
+APACHE - 02/04/24 - 16:30:01 online
+APACHE - 02/04/24 - 16:35:01 online
+APACHE - 02/04/24 - 16:40:01 online
+APACHE - 02/04/24 - 16:45:01 online
+APACHE - 02/04/24 - 16:50:01 online
+APACHE - 02/04/24 - 16:55:01 online
+APACHE - 02/04/24 - 17:00:01 online
+APACHE - 02/04/24 - 17:05:01 online
+APACHE - 02/04/24 - 17:10:01 online
+APACHE - 02/04/24 - 17:15:01 online
+APACHE - 02/04/24 - 17:20:01 online
+APACHE - 02/04/24 - 17:25:01 online
+APACHE - 02/04/24 - 17:30:01 online
+APACHE - 02/04/24 - 17:35:01 online
+APACHE - 02/04/24 - 17:40:01 online
+APACHE - 02/04/24 - 17:45:01 online
+APACHE - 02/04/24 - 17:50:01 online
+APACHE - 02/04/24 - 17:55:01 online
+APACHE - 02/04/24 - 18:00:01 online
+APACHE - 02/04/24 - 18:05:01 online
+APACHE - 02/04/24 - 18:10:01 online
+APACHE - 02/04/24 - 18:15:01 online
+APACHE - 02/04/24 - 18:20:01 online
+APACHE - 02/04/24 - 18:25:01 online
+APACHE - 02/04/24 - 18:30:01 online
+APACHE - 02/04/24 - 18:35:01 online
+APACHE - 02/04/24 - 18:40:01 online
+APACHE - 02/04/24 - 18:45:01 online
+APACHE - 02/04/24 - 18:50:01 online
+APACHE - 02/04/24 - 18:55:01 online
+APACHE - 02/04/24 - 19:00:01 online
+APACHE - 02/04/24 - 19:05:01 online
+APACHE - 02/04/24 - 19:10:01 online
+APACHE - 02/04/24 - 19:15:01 online
+APACHE - 02/04/24 - 19:20:01 online
+APACHE - 02/04/24 - 19:25:01 online
+APACHE - 02/04/24 - 19:30:01 online
+APACHE - 02/04/24 - 19:35:01 online
+APACHE - 02/04/24 - 19:40:01 online
+APACHE - 02/04/24 - 19:45:01 online
+APACHE - 02/04/24 - 19:50:01 online
+APACHE - 02/04/24 - 19:55:01 online
+APACHE - 02/04/24 - 20:00:01 online
+APACHE - 02/04/24 - 20:05:01 online
+APACHE - 02/04/24 - 20:10:01 online
+APACHE - 02/04/24 - 20:15:01 online
+APACHE - 02/04/24 - 20:20:01 online
+APACHE - 02/04/24 - 20:25:01 online
+APACHE - 02/04/24 - 20:30:01 online
+APACHE - 02/04/24 - 20:35:01 online
+APACHE - 02/04/24 - 20:40:01 online
+APACHE - 02/04/24 - 20:45:01 online
+APACHE - 02/04/24 - 20:50:01 online
+APACHE - 02/04/24 - 20:55:01 online
+APACHE - 02/04/24 - 21:00:01 online
+APACHE - 02/04/24 - 21:05:01 online
+APACHE - 02/04/24 - 21:10:01 online
+APACHE - 02/04/24 - 21:15:01 online
+APACHE - 02/04/24 - 21:20:01 online
+APACHE - 02/04/24 - 21:25:01 online
+APACHE - 02/04/24 - 21:30:01 online
+APACHE - 02/04/24 - 21:35:02 online
+APACHE - 02/04/24 - 21:40:01 online
+APACHE - 02/04/24 - 21:45:01 online
+APACHE - 02/04/24 - 21:50:01 online
+APACHE - 02/04/24 - 21:55:01 online
+APACHE - 02/04/24 - 22:00:01 online
+APACHE - 02/04/24 - 22:05:01 online
+APACHE - 02/04/24 - 22:10:01 online
+APACHE - 02/04/24 - 22:15:01 online
+APACHE - 02/04/24 - 22:20:01 online
+APACHE - 02/04/24 - 22:25:01 online
+APACHE - 02/04/24 - 22:30:01 online
+APACHE - 02/04/24 - 22:35:01 online
+APACHE - 02/04/24 - 22:40:01 online
+APACHE - 02/04/24 - 22:45:01 online
+APACHE - 02/04/24 - 22:50:01 online
+APACHE - 02/04/24 - 22:55:01 online
+APACHE - 02/04/24 - 23:00:01 online
+APACHE - 02/04/24 - 23:05:01 online
+APACHE - 02/04/24 - 23:10:01 online
+APACHE - 02/04/24 - 23:15:01 online
+APACHE - 02/04/24 - 23:20:01 online
+APACHE - 02/04/24 - 23:25:01 online
+APACHE - 02/04/24 - 23:30:01 online
+APACHE - 02/04/24 - 23:35:01 online
+APACHE - 02/04/24 - 23:40:01 online
+APACHE - 02/04/24 - 23:45:01 online
+APACHE - 02/04/24 - 23:50:01 online
+APACHE - 02/04/24 - 23:55:01 online
+APACHE - 03/04/24 - 00:00:01 online
+APACHE - 03/04/24 - 00:05:01 online
+APACHE - 03/04/24 - 00:10:01 online
+APACHE - 03/04/24 - 00:15:02 online
+APACHE - 03/04/24 - 00:20:01 online
+APACHE - 03/04/24 - 00:25:01 online
+APACHE - 03/04/24 - 00:30:01 online
+APACHE - 03/04/24 - 00:35:01 online
+APACHE - 03/04/24 - 00:40:01 online
+APACHE - 03/04/24 - 00:45:01 online
+APACHE - 03/04/24 - 00:50:01 online
+root@wanderson-server:/wanderson# 
+
+
